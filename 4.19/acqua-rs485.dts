@@ -143,15 +143,15 @@
 			};
 
 
-			usart0: serial@f001c000
-				pinctrl-0 = <&pinctrl_usart0 &pinctrl_usart0_rts>;
+			usart0: serial@f001c000 {
+				pinctrl-0 = <&pinctrl_usart0 &pinctrl_usart0_rts_cts>;
 				linux,rs485-enabled-at-boot-time;
 				rs485-rts-delay = <0 20>;
 				status = "okay";
 			};
 
-			usart1: serial@f0020000
-				pinctrl-0 = <&pinctrl_usart1 &pinctrl_usart1_rts>;
+			usart1: serial@f0020000 {
+				pinctrl-0 = <&pinctrl_usart1 &pinctrl_usart1_rts_cts>;
 				linux,rs485-enabled-at-boot-time;
 				rs485-rts-delay = <0 20>;
 				status = "okay";
