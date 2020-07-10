@@ -1,6 +1,6 @@
 /*
- * Device Tree file for Arietta G25
- * https://www.acmesystems.it/arietta
+ * Device Tree file for Arietta G25 and DS485
+ * https://www.acmesystems.it/DS485
  */
  
 /dts-v1/;
@@ -46,16 +46,15 @@
 				};
 			};
 
-			tcb0: timer@f8008000 {
-				timer@0 {
-					compatible = "atmel,tcb-timer";
-					reg = <0>;
-				};
+			i2c0: i2c@f8010000 {
+				status ="okay";
+			};
 
-				timer@1 {
-					compatible = "atmel,tcb-timer";
-					reg = <1>;
-				};
+			usart1: serial@f8020000 {
+				pinctrl-0 = <&pinctrl_usart1 &pinctrl_usart1_rts &pinctrl_usart1_cts>;
+				linux,rs485-enabled-at-boot-time;
+				rs485-rts-delay = <0 0>;
+				status ="okay";
 			};
 
 			usb2: gadget@f803c000 {
@@ -89,4 +88,22 @@
 			linux,default-trigger = "heartbeat";
 		};
 	};
+
+	onewire@0 {
+		compatible = "w1-gpio";
+		gpios = <&pioA 24 GPIO_ACTIVE_LOW>;
+	};
+	onewire@1 {
+		compatible = "w1-gpio";
+		gpios = <&pioA 25 GPIO_ACTIVE_LOW>;
+	};
+	onewire@2 {
+		compatible = "w1-gpio";
+		gpios = <&pioA 26 GPIO_ACTIVE_LOW>;
+	};
+	onewire@3 {
+		compatible = "w1-gpio";
+		gpios = <&pioA 27 GPIO_ACTIVE_LOW>;
+	};
+	
 };
