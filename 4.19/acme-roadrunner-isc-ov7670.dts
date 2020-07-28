@@ -1,0 +1,248 @@
+/*
+ * Device Tree file for Acme Systems RoadRunner S
+ * Camera sensor on ISC interface
+ * OV7670
+ */
+
+/dts-v1/;
+#include "sama5d2.dtsi"
+#include "sama5d2-pinfunc.h"
+#include <dt-bindings/mfd/atmel-flexcom.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Acme Systems SAMA5D2 Roadrunner";
+	compatible = "atmel,sama5d2-roadrunner", "atmel,sama5d27","atmel,sama5d2", "atmel,sama5";
+
+	bootargs = "mem=256M console=ttyS0,115200 root=/dev/mmcblk0p2 rootfstype=ext4 rw rootwait consoleblank=0";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	clocks {
+		slow_xtal {
+			clock-frequency = <32768>;
+		};
+
+		main_xtal {
+			clock-frequency = <12000000>;
+		};
+	};
+
+	ahb {
+		usb0: gadget@300000 {
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_usba_vbus>;
+			status = "okay";
+		};
+
+		usb1: ohci@400000 {
+			num-ports = <3>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_usb_default>;
+			status = "okay";
+		};
+
+		usb2: ehci@500000 {
+			status = "okay";
+		};
+
+		sdmmc1: sdio-host@b0000000 {
+			bus-width = <4>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&pinctrl_sdmmc1_default>;
+			non-removable;
+			status = "okay";
+		};
+
+		apb {
+			/* Omnivision OV7670 (0.3 MPixel) */
+	
+			i2c1: i2c@fc028000 {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				pinctrl-names = "default";
+				pinctrl-0 = <&pinctrl_i2c1_default>;
+				status = "okay";
+
+				ov7670: camera@21 {
+					compatible = "ovti,ov7670";
+					reg = <0x21>;
+					pinctrl-names = "default";
+					pinctrl-0 = <&pinctrl_sensor_power &pinctrl_sensor_reset>;
+					clocks = <&isc>;
+					clock-names = "xclk";
+					assigned-clocks = <&isc>;
+					assigned-clock-rates = <24000000>;
+					reset-gpios = <&pioA PIN_PB11 GPIO_ACTIVE_LOW>;
+					powerdown-gpios = <&pioA PIN_PB12 GPIO_ACTIVE_HIGH>;
+
+					port {
+						ov7670_0: endpoint {
+							remote-endpoint = <&isc_0>;
+							hsync-active = <1>;
+							vsync-active = <1>;
+							pclk-sample = <1>;
+						};
+					};
+				};
+	
+			};
+
+			isc: isc@f0008000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&pinctrl_isc_base &pinctrl_isc_data_8bit>;
+				status = "okay";
+
+				port {
+					isc_0: endpoint@0 {
+						remote-endpoint = <&ov7670_0>;
+						hsync-active = <1>;
+						vsync-active = <0>;
+						pclk-sample = <1>;
+					};
+				};
+			};
+
+
+			macb0: ethernet@f8008000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&pinctrl_macb0_default &pinctrl_macb0_phy_irq>;
+				phy-mode = "rmii";
+				status = "okay";
+
+				ethernet-phy@1 {
+					reg = <0x1>;
+					interrupt-parent = <&pioA>;
+					interrupts = <73 IRQ_TYPE_LEVEL_LOW>;
+					/*interrupts = <PIN_PC9 IRQ_TYPE_LEVEL_LOW>;*/
+				};
+			};
+
+			tcb0: timer@f800c000 {
+				timer0: timer@0 {
+					compatible = "atmel,tcb-timer";
+					reg = <0>;
+				};
+
+				timer1: timer@1 {
+					compatible = "atmel,tcb-timer";
+					reg = <1>;
+				};
+			};
+
+			uart1: serial@f8020000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&pinctrl_uart1_default>;
+				atmel,use-dma-rx;
+				atmel,use-dma-tx;
+				status = "okay";
+			};
+
+			shdwc@f8048010 {
+				atmel,shdwc-debouncer = <976>;
+				atmel,wakeup-rtc-timer;
+
+				input@0 {
+					reg = <0>;
+					atmel,wakeup-type = "low";
+				};
+			};
+
+			watchdog@f8048040 {
+				status = "okay";
+			};
+
+			pinctrl@fc038000 {
+				pinctrl_isc_base: isc_base {
+					pinmux = <PIN_PC4__ISC_PCK>,
+						 <PIN_PC5__ISC_VSYNC>,
+						 <PIN_PC6__ISC_HSYNC>,
+						 <PIN_PC7__ISC_MCK>;
+					bias-disable;
+				};
+
+				pinctrl_isc_data_8bit: isc_data_8bit {
+					pinmux = <PIN_PB25__ISC_D11>,
+						 <PIN_PB24__ISC_D10>,
+						 <PIN_PC3__ISC_D9>,
+						 <PIN_PC2__ISC_D8>,
+						 <PIN_PC1__ISC_D7>,
+						 <PIN_PC0__ISC_D6>,
+						 <PIN_PB31__ISC_D5>,
+						 <PIN_PB30__ISC_D4>;
+					bias-disable;
+				};
+
+
+				pinctrl_sensor_power: sensor_power {
+					pinmux = <PIN_PB12__GPIO>;
+					bias-disable;
+				};
+
+				pinctrl_sensor_reset: sensor_reset {
+					pinmux = <PIN_PB11__GPIO>;
+					bias-disable;
+				};
+
+				pinctrl_i2c1_default: i2c1_default {
+					pinmux = <PIN_PD4__TWD1>,
+						 <PIN_PD5__TWCK1>;
+					bias-disable;
+				};
+
+				pinctrl_macb0_default: macb0_default {
+					pinmux = <PIN_PB14__GTXCK>, 
+						 <PIN_PB15__GTXEN>,
+						 <PIN_PB16__GRXDV>,
+						 <PIN_PB17__GRXER>,
+						 <PIN_PB18__GRX0>,
+						 <PIN_PB19__GRX1>,
+						 <PIN_PB20__GTX0>,
+						 <PIN_PB21__GTX1>,
+						 <PIN_PB22__GMDC>,
+						 <PIN_PB23__GMDIO>;
+					bias-disable;
+				};
+
+				pinctrl_macb0_phy_irq: macb0_phy_irq {
+					pinmux = <PIN_PC9__GPIO>;
+					bias-disable;
+				};
+
+				pinctrl_sdmmc1_default: sdmmc1_default {
+					cmd_data {
+						pinmux = <PIN_PA28__SDMMC1_CMD>,
+							 <PIN_PA18__SDMMC1_DAT0>,
+							 <PIN_PA19__SDMMC1_DAT1>,
+							 <PIN_PA20__SDMMC1_DAT2>,
+							 <PIN_PA21__SDMMC1_DAT3>;
+						bias-pull-up;
+					};
+
+					conf-ck_cd {
+						pinmux = <PIN_PA22__SDMMC1_CK>;
+						bias-disable;
+					};
+				};
+
+				pinctrl_uart1_default: uart1_default {
+					pinmux = <PIN_PD2__URXD1>,
+						 <PIN_PD3__UTXD1>;
+					bias-disable;
+				};
+
+				pinctrl_usb_default: usb_default {
+					pinmux = <PIN_PB10__GPIO>;
+					bias-disable;
+				};
+
+				pinctrl_usba_vbus: usba_vbus {
+					pinmux = <PIN_PA31__GPIO>;
+					bias-disable;
+				};
+			};
+		};
+	};
+};
